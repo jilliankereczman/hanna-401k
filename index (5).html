@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hanna 401(k) Retirement Planner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #1a1a1a; padding: 24px; }
+  .stat-card { background: #f5f5f5; border-radius: 8px; padding: 1rem; }
+  .section-label { font-size: 12px; color: #666; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .big-num { font-size: 22px; font-weight: 500; margin: 0; }
+  label { font-size: 13px; color: #555; }
+  input[type=range] { accent-color: #003B56; width: 100%; }
+  p { margin: 0; }
+  hr { border: none; border-top: 1px solid #e5e5e5; margin: 1.5rem 0; }
+</style>
+</head>
+<body>
+<div style="max-width: 800px; margin: 0 auto;">
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-bottom: 12px;">
+    <div class="stat-card">
+      <p class="section-label">starting contribution</p>
+      <p class="big-num" id="personal-out">$4,800</p>
+      <p style="font-size: 12px; color: #999; margin-top: 4px;" id="personal-sub">6% of salary / year</p>
+    </div>
+    <div class="stat-card">
+      <p class="section-label">Hanna's match (yr 1)</p>
+      <p class="big-num" id="match-out">$2,400</p>
+      <p style="font-size: 12px; color: #999; margin-top: 4px;">capped at $4,500/yr</p>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-bottom: 1.5rem;">
+    <div class="stat-card">
+      <p class="section-label">years to retirement</p>
+      <p class="big-num" id="years-out">30</p>
+      <p style="font-size: 12px; color: #999; margin-top: 4px;" id="retire-year-out">retiring 2056</p>
+    </div>
+    <div class="stat-card">
+      <p class="section-label">salary at retirement</p>
+      <p class="big-num" id="final-salary-out">--</p>
+      <p style="font-size: 12px; color: #999; margin-top: 4px;" id="salary-growth-sub">at 2% annual growth</p>
+    </div>
+    <div style="background: #003B56; border-radius: 8px; padding: 1rem;">
+      <p class="section-label" style="color: #BF912F;">balance at retirement</p>
+      <p class="big-num" style="color: #fff;" id="total-out">--</p>
+      <p style="font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 4px;" id="growth-out">--</p>
+    </div>
+  </div>
+
+  <div style="display: grid; gap: 16px; margin-bottom: 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="min-width: 180px;">Annual salary</label>
+      <input type="range" min="30000" max="300000" step="5000" value="80000" id="salary-slider" oninput="update()">
+      <span style="font-size: 13px; font-weight: 500; min-width: 80px; text-align: right;" id="salary-label">$80,000</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="min-width: 180px;">Annual salary increase</label>
+      <input type="range" min="0" max="8" step="0.5" value="2" id="raise-slider" oninput="update()">
+      <span style="font-size: 13px; font-weight: 500; min-width: 80px; text-align: right;" id="raise-label">2%</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="min-width: 180px;">Deferral rate</label>
+      <input type="range" min="1" max="23" step="1" value="6" id="deferral-slider" oninput="update()">
+      <span style="font-size: 13px; font-weight: 500; min-width: 80px; text-align: right;" id="deferral-label">6%</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="min-width: 180px;">Current 401(k) balance</label>
+      <input type="range" min="0" max="500000" step="5000" value="0" id="balance-slider" oninput="update()">
+      <span style="font-size: 13px; font-weight: 500; min-width: 80px; text-align: right;" id="balance-label">$0</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="min-width: 180px;">Current age</label>
+      <input type="range" min="18" max="64" step="1" value="35" id="age-slider" oninput="update()">
+      <span style="font-size: 13px; font-weight: 500; min-width: 80px; text-align: right;" id="age-label">35</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="min-width: 180px;">Retirement age</label>
+      <input type="range" min="55" max="75" step="1" value="65" id="retire-slider" oninput="update()">
+      <span style="font-size: 13px; font-weight: 500; min-width: 80px; text-align: right;" id="retire-label">65</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="min-width: 180px;">Annual return</label>
+      <input type="range" min="2" max="10" step="0.5" value="6" id="rate-slider" oninput="update()">
+      <span style="font-size: 13px; font-weight: 500; min-width: 80px; text-align: right;" id="rate-label">6%</span>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 1.25rem;">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 12px; color: #555;">
+      <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #003B56; display:inline-block;"></span>Current balance growth</span>
+      <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #BF912F; display:inline-block;"></span>Your contributions + growth</span>
+      <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #7A9EAF; display:inline-block;"></span>Hanna's match + growth</span>
+    </div>
+    <div style="position: relative; width: 100%; height: 260px;">
+      <canvas id="growthChart"></canvas>
+    </div>
+  </div>
+
+  <div id="note" style="font-size: 13px; color: #555; border-left: 2px solid #BF912F; padding-left: 12px; margin-bottom: 1.5rem;"></div>
+
+  <div style="padding: 1rem 1.25rem; background: #f5f5f5; border-radius: 8px; margin-bottom: 1.5rem;">
+    <p style="font-size: 13px; color: #555;">💡 Hanna matches 50% of up to 6% of your salary, capped at $4,500/year every year regardless of salary growth. This means your projected balance may be slightly lower than calculators like Bankrate that don't apply this cap. Projections are estimates — actual results will vary based on market performance and life changes.</p>
+  </div>
+
+  <a href="https://www.401k.com" style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: #fff; background: #003B56; text-decoration: none; border-radius: 8px; padding: 8px 16px;">
+    Set up your account on Fidelity NetBenefits ↗
+  </a>
+
+</div>
+
+<script>
+let chart;
+const MATCH_CAP = 4500;
+const CURRENT_YEAR = new Date().getFullYear();
+
+function fmt(n) {
+  if (n >= 1000000) return '$' + (n / 1000000).toFixed(2) + 'M';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function simulateByYear(salary, raiseRate, deferral, balance, years, annualReturn) {
+  const monthlyRate = annualReturn / 100 / 12;
+  let balExisting = balance;
+  let balPersonal = 0;
+  let balMatch = 0;
+  const existingArr = [], personalArr = [], matchArr = [];
+  let finalSalary = salary;
+  let totalPersonalContrib = 0;
+  let totalMatchContrib = 0;
+
+  for (let y = 0; y < years; y++) {
+    const currentSalary = salary * Math.pow(1 + raiseRate / 100, y);
+    finalSalary = currentSalary;
+    const personalMonthly = (currentSalary * deferral / 100) / 12;
+    const annualMatch = Math.min(currentSalary * (Math.min(deferral, 6) / 100) * 0.5, MATCH_CAP);
+    const matchMonthly = annualMatch / 12;
+    for (let m = 0; m < 12; m++) {
+      balExisting = balExisting * (1 + monthlyRate);
+      balPersonal = balPersonal * (1 + monthlyRate) + personalMonthly;
+      balMatch = balMatch * (1 + monthlyRate) + matchMonthly;
+    }
+    totalPersonalContrib += currentSalary * deferral / 100;
+    totalMatchContrib += annualMatch;
+    existingArr.push(Math.round(balExisting));
+    personalArr.push(Math.round(balPersonal));
+    matchArr.push(Math.round(balMatch));
+  }
+
+  const total = Math.round(balExisting + balPersonal + balMatch);
+  const totalContrib = balance + totalPersonalContrib + totalMatchContrib;
+  return { existingArr, personalArr, matchArr, total, growth: Math.round(total - totalContrib), finalSalary: Math.round(finalSalary) };
+}
+
+function update() {
+  const salary = parseInt(document.getElementById('salary-slider').value);
+  const raise = parseFloat(document.getElementById('raise-slider').value);
+  const deferral = parseInt(document.getElementById('deferral-slider').value);
+  const balance = parseInt(document.getElementById('balance-slider').value);
+  const age = parseInt(document.getElementById('age-slider').value);
+  const retireAge = Math.max(parseInt(document.getElementById('retire-slider').value), age + 1);
+  const rate = parseFloat(document.getElementById('rate-slider').value);
+  const years = retireAge - age;
+
+  document.getElementById('salary-label').textContent = '$' + salary.toLocaleString();
+  document.getElementById('raise-label').textContent = raise.toFixed(1) + '%';
+  document.getElementById('deferral-label').textContent = deferral + '%';
+  document.getElementById('balance-label').textContent = '$' + balance.toLocaleString();
+  document.getElementById('age-label').textContent = age;
+  document.getElementById('retire-label').textContent = retireAge;
+  document.getElementById('rate-label').textContent = rate.toFixed(1) + '%';
+
+  const { existingArr, personalArr, matchArr, total, growth, finalSalary } = simulateByYear(salary, raise, deferral, balance, years, rate);
+
+  const startPersonal = Math.round(salary * deferral / 100);
+  const startMatch = Math.round(Math.min(salary * (Math.min(deferral, 6) / 100) * 0.5, MATCH_CAP));
+
+  document.getElementById('personal-out').textContent = '$' + startPersonal.toLocaleString();
+  document.getElementById('personal-sub').textContent = deferral + '% of salary / year';
+  document.getElementById('match-out').textContent = '$' + startMatch.toLocaleString();
+  document.getElementById('years-out').textContent = years;
+  document.getElementById('retire-year-out').textContent = 'retiring ' + (CURRENT_YEAR + years);
+  document.getElementById('final-salary-out').textContent = '$' + finalSalary.toLocaleString();
+  document.getElementById('salary-growth-sub').textContent = 'at ' + raise.toFixed(1) + '% annual growth';
+  document.getElementById('total-out').textContent = fmt(total);
+  document.getElementById('growth-out').textContent = fmt(growth) + ' in growth';
+
+  const note = deferral < 6
+    ? `You're not yet capturing Hanna's full match. Bumping up to 6% is the easiest way to boost your retirement balance — it's money Hanna puts in on top of your own savings.`
+    : deferral === 6
+    ? `You're capturing Hanna's full match of $4,500/year. Note that other calculators like Bankrate may show a higher number since they don't apply Hanna's $4,500 annual cap.`
+    : `You're saving above the match threshold — great work. Note that Hanna's match is capped at $4,500/year, so your projected balance may be slightly lower than uncapped calculators like Bankrate.`;
+  document.getElementById('note').textContent = note;
+
+  const labels = [], eData = [], pData = [], mData = [];
+  const step = Math.max(1, Math.floor(years / 20));
+  for (let y = step; y <= years; y += step) {
+    labels.push('Yr ' + y);
+    eData.push(existingArr[y - 1] || 0);
+    pData.push(personalArr[y - 1] || 0);
+    mData.push(matchArr[y - 1] || 0);
+  }
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = eData;
+    chart.data.datasets[1].data = pData;
+    chart.data.datasets[2].data = mData;
+    chart.update();
+  } else {
+    chart = new Chart(document.getElementById('growthChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Current balance growth', data: eData, backgroundColor: '#003B56', stack: 'a' },
+          { label: 'Your contributions + growth', data: pData, backgroundColor: '#BF912F', stack: 'a' },
+          { label: "Hanna's match + growth", data: mData, backgroundColor: '#7A9EAF', stack: 'a' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true, labels: { usePointStyle: true, pointStyle: 'rect', font: { size: 12 }, color: '#555', boxWidth: 12 } } },
+        scales: {
+          x: { stacked: true, ticks: { autoSkip: true, maxTicksLimit: 10, font: { size: 11 } }, grid: { display: false } },
+          y: { stacked: true, ticks: { callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1) + 'M' : Math.round(v/1000) + 'k'), font: { size: 11 } } }
+        }
+      }
+    });
+  }
+}
+
+update();
+</script>
+</body>
+</html>
